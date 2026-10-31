@@ -2564,6 +2564,10 @@ class LiveRoomController extends PlayerController
   /// 确认候选房间是否在播。
   /// true=在播；false=不在播或查询失败；null=触发平台风控（444），应立即中止扫描
   Future<bool?> _confirmCandidateLive(FollowUser candidate) async {
+    // Official web players cannot be opened by the native stream switcher.
+    if (Sites.allSites[candidate.siteId]?.liveSite is GlobalLiveSite) {
+      return false;
+    }
     try {
       return await Sites.allSites[candidate.siteId]!.liveSite
           .getLiveStatus(roomId: candidate.roomId);

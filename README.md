@@ -150,6 +150,10 @@ TV 下载建议：
 - 哔哩哔哩直播
 - 抖音直播
 - 快手直播
+- YouTube Live（官方播放器；状态和元数据查询需可选 API 配置）
+- Twitch（官方浏览器播放；Android 可配置 HTTPS 嵌入页面）
+
+使用方式、平台限制和验证范围见 [YouTube / Twitch 接入说明](docs/global-live/README.md)。
 
 ## APP 支持平台
 

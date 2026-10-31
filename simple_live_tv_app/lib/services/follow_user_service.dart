@@ -1447,6 +1447,9 @@ class FollowUserService extends BasePageController<FollowUser> {
       await DBService.instance.addFollow(item);
       return const _FollowRefreshItemResult(_FollowRefreshItemOutcome.success);
     } catch (e) {
+      if (Sites.allSites[item.siteId]?.liveSite is GlobalLiveSite) {
+        item.liveStatus.value = 0;
+      }
       if (generation != null && generation != _updateGeneration) {
         return const _FollowRefreshItemResult(
             _FollowRefreshItemOutcome.deferred);

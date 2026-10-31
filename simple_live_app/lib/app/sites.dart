@@ -34,6 +34,18 @@ class Sites {
       name: "快手直播",
       liveSite: KuaishouSite(),
     ),
+    'youtube': Site(
+      id: 'youtube',
+      name: 'YouTube Live',
+      logo: 'assets/images/youtube.png',
+      liveSite: GlobalLiveSite('youtube'),
+    ),
+    'twitch': Site(
+      id: 'twitch',
+      name: 'Twitch',
+      logo: 'assets/images/twitch.png',
+      liveSite: GlobalLiveSite('twitch'),
+    ),
   };
 
   static List<Site> get supportSites {

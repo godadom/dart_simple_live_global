@@ -1,3 +1,5 @@
+import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_app/modules/global_live/global_live_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
@@ -26,10 +28,7 @@ class HomePage extends GetView<HomeController> {
 
                   child: Row(
                     children: [
-                      Image.asset(
-                        e.logo,
-                        width: 24,
-                      ),
+                      Image.asset(e.logo, width: 24),
                       AppStyle.hGap8,
                       Text(e.name),
                     ],
@@ -42,16 +41,16 @@ class HomePage extends GetView<HomeController> {
           IconButton(
             onPressed: controller.toSearch,
             icon: const Icon(Icons.search),
-          )
+          ),
         ],
       ),
       body: TabBarView(
         controller: controller.tabController,
         children: Sites.supportSites
             .map(
-              (e) => HomeListView(
-                e.id,
-              ),
+              (e) => e.liveSite is GlobalLiveSite
+                  ? GlobalLivePage(site: e)
+                  : HomeListView(e.id),
             )
             .toList(),
       ),

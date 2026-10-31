@@ -1,3 +1,4 @@
+import 'package:simple_live_tv_app/modules/global_live/global_live_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:simple_live_core/simple_live_core.dart';
@@ -86,7 +87,11 @@ class CategoryPage extends GetView<CategoryController> {
                       selected: controller.siteId.value == e.id,
                       focusNode: AppFocusNode(),
                       onTap: () {
-                        controller.setSite(e.id);
+                        if (e.liveSite is GlobalLiveSite) {
+                          Get.to(() => GlobalLivePage(site: e));
+                        } else {
+                          controller.setSite(e.id);
+                        }
                       },
                     ),
                   ),

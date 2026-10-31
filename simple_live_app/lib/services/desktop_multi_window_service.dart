@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:simple_live_core/simple_live_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:screen_retriever/screen_retriever.dart';
@@ -18,6 +19,9 @@ class DesktopMultiWindowService {
   static bool get hasOpenedRooms => _openedProcessIds.isNotEmpty;
 
   static Future<bool> openRooms(List<MultiRoomItem> rooms) async {
+    if (rooms.any((room) => room.site.liveSite is GlobalLiveSite)) {
+      return false;
+    }
     if (!isSupported || rooms.length < 2) {
       return false;
     }

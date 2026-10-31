@@ -175,7 +175,8 @@ class AutoSwitchListService extends GetxService {
   /// 返回 false 表示触发平台风控（444），调用方应中止本次自动换台。
   Future<bool> refreshStatuses() async {
     final valid =
-        items.where((e) => Sites.allSites.containsKey(e.siteId)).toList();
+        items.where((e) => Sites.allSites.containsKey(e.siteId) &&
+            Sites.allSites[e.siteId]!.liveSite is! GlobalLiveSite).toList();
     final results = <String, bool>{};
     var riskControl = false;
     var index = 0;

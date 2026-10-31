@@ -1,3 +1,5 @@
+import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_tv_app/modules/global_live/global_live_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -76,16 +78,16 @@ class HotLivePage extends GetView<HotliveController> {
                 .map(
                   (e) => Obx(
                     () => HighlightButton(
-                      icon: Image.asset(
-                        e.logo,
-                        width: 48.w,
-                        height: 48.w,
-                      ),
+                      icon: Image.asset(e.logo, width: 48.w, height: 48.w),
                       text: e.name,
                       selected: controller.siteId.value == e.id,
                       focusNode: AppFocusNode(),
                       onTap: () {
-                        controller.setSite(e.id);
+                        if (e.liveSite is GlobalLiveSite) {
+                          Get.to(() => GlobalLivePage(site: e));
+                        } else {
+                          controller.setSite(e.id);
+                        }
                       },
                     ),
                   ),
