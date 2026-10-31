@@ -1,3 +1,5 @@
+import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_tv_app/modules/global_live/global_live_page.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:simple_live_tv_app/app/constant.dart';
@@ -21,6 +23,11 @@ class AppNavigator {
   /// 跳转至直播间
   static void toLiveRoomDetail(
       {required Site site, required String roomId}) async {
+    if (site.liveSite is GlobalLiveSite) {
+      Get.to(() => GlobalLivePage(site: site, roomId: roomId));
+      return;
+    }
+
     if (site.id == Constant.kBiliBili &&
         !BiliBiliAccountService.instance.logined.value &&
         AppSettingsController.instance.bilibiliLoginTip.value) {

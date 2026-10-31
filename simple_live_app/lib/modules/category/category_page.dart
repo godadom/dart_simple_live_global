@@ -1,3 +1,5 @@
+import 'package:simple_live_core/simple_live_core.dart';
+import 'package:simple_live_app/modules/global_live/global_live_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
@@ -23,10 +25,7 @@ class CategoryPage extends GetView<CategoryController> {
                   //text: e.name,
                   child: Row(
                     children: [
-                      Image.asset(
-                        e.logo,
-                        width: 24,
-                      ),
+                      Image.asset(e.logo, width: 24),
                       AppStyle.hGap8,
                       Text(e.name),
                     ],
@@ -43,9 +42,9 @@ class CategoryPage extends GetView<CategoryController> {
         controller: controller.tabController,
         children: Sites.supportSites
             .map(
-              (e) => CategoryListView(
-                e.id,
-              ),
+              (e) => e.liveSite is GlobalLiveSite
+                  ? GlobalLivePage(site: e)
+                  : CategoryListView(e.id),
             )
             .toList(),
       ),

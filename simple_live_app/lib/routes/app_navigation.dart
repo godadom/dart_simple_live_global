@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:simple_live_app/modules/global_live/global_live_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -79,6 +80,11 @@ class AppNavigator {
     }
     _lastLiveRoomOpenAt[roomKey] = now;
 
+    if (site.liveSite is GlobalLiveSite) {
+      Get.to(() => GlobalLivePage(site: site, roomId: roomId));
+      return;
+    }
+
     if (site.id == Constant.kBiliBili &&
         !BiliBiliAccountService.instance.logined.value &&
         AppSettingsController.instance.bilibiliLoginTip.value) {
@@ -116,6 +122,10 @@ class AppNavigator {
   }
 
   static Future<dynamic> toMultiRoom(List<MultiRoomItem> rooms) {
+    if (rooms.any((room) => room.site.liveSite is GlobalLiveSite)) {
+      SmartDialog.showToast('YouTube / Twitch 请从单独直播间使用官方播放器观看，暂不支持多开');
+      return Future.value();
+    }
     if (!PlatformUtils.supportsInlineMultiRoom) {
       SmartDialog.showToast("当前移动端版本已关闭多开同屏");
       return Future.value();

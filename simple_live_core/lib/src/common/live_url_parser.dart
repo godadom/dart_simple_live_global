@@ -1,4 +1,5 @@
 import 'kuaishou_live_link.dart';
+import 'global_live_link.dart';
 
 /// 直播间链接解析结果。
 ///
@@ -35,13 +36,31 @@ class LiveUrlParser {
 
   /// 解析直播间链接，无法识别时返回 null。
   static LiveParsedUrl? parse(String value) {
+    try {
+      return _parse(value);
+    } on FormatException {
+      // Uri.pathSegments can throw for malformed percent-encoded input.
+      return null;
+    }
+  }
+
+  static LiveParsedUrl? _parse(String value) {
+    final global = GlobalLiveLink.parse(value);
+    if (global != null) {
+      return LiveParsedUrl(
+        siteId: global.siteId,
+        roomId: global.roomId,
+        uri: global.url,
+      );
+    }
     final uri = _parseUri(value);
     if (uri == null) {
       return null;
     }
     final host = uri.host.toLowerCase();
-    final segments =
-        uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
+    final segments = uri.pathSegments
+        .where((segment) => segment.isNotEmpty)
+        .toList();
 
     // 短链：必须先跟随重定向，无法直接提取房间号。
     if (host == "b23.tv") {
