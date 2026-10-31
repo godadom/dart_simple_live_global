@@ -7,6 +7,15 @@ class HomeListController extends BasePageController<LiveRoomItem> {
   HomeListController(this.site);
 
   @override
+  void scrollToTopOrRefresh() {
+    if (!scrollController.hasClients) {
+      refreshData();
+      return;
+    }
+    super.scrollToTopOrRefresh();
+  }
+
+  @override
   Future<List<LiveRoomItem>> getData(int page, int pageSize) async {
     var result = await site.liveSite.getRecommendRooms(page: page);
 

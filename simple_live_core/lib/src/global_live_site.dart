@@ -9,6 +9,8 @@ class GlobalLiveConfig {
   String twitchClientId = '';
   String twitchAccessToken = '';
   String twitchEmbedPage = '';
+  String twitchChatUser = '';
+  String twitchChatToken = ''; // Optional User Access Token, chat:read only.
 }
 
 class GlobalLiveException implements Exception {
@@ -24,6 +26,9 @@ class GlobalLiveSite extends LiveSite {
   final Dio _http;
   final _cache = <String, (DateTime, LiveRoomDetail)>{};
   DateTime? _retryAfter;
+  final _listingPages = <int, LiveCategoryResult>{};
+  final _listingTokens = <int, String>{};
+  DateTime? _listingAt;
   GlobalLiveSite(String platform, {GlobalLiveConfig? config, Dio? http})
     : config = config ?? GlobalLiveConfig(),
       _http =
@@ -43,6 +48,9 @@ class GlobalLiveSite extends LiveSite {
 
   void clearCache() {
     _cache.clear();
+    _listingPages.clear();
+    _listingTokens.clear();
+    _listingAt = null;
     _retryAfter = null;
   }
 
@@ -86,6 +94,23 @@ class GlobalLiveSite extends LiveSite {
       return response.data!;
     } on DioException catch (e) {
       final code = e.response?.statusCode;
+      if (path == 'liveChat/messages' && code == 403) {
+        final body = e.response?.data;
+        final errorBody = body is Map ? body['error'] : null;
+        final errors = errorBody is Map ? errorBody['errors'] : null;
+        final reason = errors is List && errors.isNotEmpty
+            ? errors.first['reason']
+            : null;
+        if (reason == 'liveChatDisabled') {
+          throw const GlobalLiveException('主播已关闭直播聊天');
+        }
+        if (reason == 'liveChatEnded') {
+          throw const GlobalLiveException('直播聊天已结束');
+        }
+        if (reason == 'forbidden') {
+          throw const GlobalLiveException('当前凭据无权读取该直播聊天');
+        }
+      }
       if (code == 429 || code == 403) {
         _retryAfter = DateTime.now().add(const Duration(minutes: 5));
         throw const GlobalLiveException('平台限流、配额耗尽或访问被拒绝；请检查配置，5 分钟后重试');
@@ -109,6 +134,7 @@ class GlobalLiveSite extends LiveSite {
     String? videoId,
     String? channelId,
     String? category,
+    String? liveChatId,
   }) => LiveRoomDetail(
     roomId: target.roomId,
     title: title ?? target.roomId,
@@ -120,7 +146,12 @@ class GlobalLiveSite extends LiveSite {
     url: target.url.toString(),
     isRecord: state == GlobalLiveState.video || state == GlobalLiveState.ended,
     categoryName: category,
-    data: {'state': state, 'videoId': videoId, 'channelId': channelId},
+    data: {
+      'state': state,
+      'videoId': videoId,
+      'channelId': channelId,
+      'liveChatId': liveChatId,
+    },
     notice: state == GlobalLiveState.unknown
         ? '状态未知：未配置官方 API，仍可打开官方播放器；不会将未知状态当作离线'
         : null,
@@ -219,6 +250,7 @@ class GlobalLiveSite extends LiveSite {
       cover: _thumb(snippet),
       online: int.tryParse('${live?['concurrentViewers']}') ?? 0,
       videoId: videoId,
+      liveChatId: live?['activeLiveChatId'],
     );
   }
 
@@ -245,6 +277,104 @@ class GlobalLiveSite extends LiveSite {
       online: stream?['viewer_count'] ?? 0,
       category: stream?['game_name'],
     );
+  }
+
+  void _requireApi() {
+    if (!configured) {
+      throw const GlobalLiveException('请先在平台设置中配置官方 API，以加载直播列表和元数据');
+    }
+  }
+
+  /// Public live discovery, never an account's personalised recommendation feed.
+  @override
+  Future<LiveCategoryResult> getRecommendRooms({int page = 1}) async {
+    _requireApi();
+    if (_listingAt != null &&
+        DateTime.now().difference(_listingAt!) > const Duration(minutes: 5)) {
+      _listingPages.clear();
+      _listingTokens.clear();
+      _listingAt = null;
+    }
+    if (_listingPages.containsKey(page)) return _listingPages[page]!;
+    if (page > 20) return LiveCategoryResult(hasMore: false, items: []);
+    final cursor = _listingTokens[page];
+    if (page > 1 && cursor == null) {
+      return LiveCategoryResult(hasMore: false, items: []);
+    }
+    final response = await _get(id == 'youtube' ? 'search' : 'streams', {
+      if (id == 'youtube') ...{
+        'part': 'snippet',
+        'type': 'video',
+        'eventType': 'live',
+        'order': 'viewCount',
+        'maxResults': 24,
+        if (cursor != null) 'pageToken': cursor,
+      } else ...{
+        'first': 24,
+        'type': 'live',
+        if (cursor != null) 'after': cursor,
+      },
+    });
+    final items = <LiveRoomItem>[];
+    if (id == 'youtube') {
+      for (final item in response['items'] as List) {
+        final snippet = item['snippet'];
+        if (snippet['liveBroadcastContent'] != 'live') continue;
+        items.add(
+          LiveRoomItem(
+            roomId: item['id']['videoId'],
+            title: snippet['title'],
+            cover: _thumb(snippet),
+            userName: snippet['channelTitle'],
+          ),
+        );
+      }
+    } else {
+      for (final item in response['data'] as List) {
+        items.add(
+          LiveRoomItem(
+            roomId: item['user_login'],
+            title: item['title'],
+            cover: (item['thumbnail_url'] as String)
+                .replaceAll('{width}', '640')
+                .replaceAll('{height}', '360'),
+            userName: item['user_name'],
+            online: item['viewer_count'] ?? 0,
+          ),
+        );
+      }
+    }
+    final next =
+        (id == 'youtube'
+                ? response['nextPageToken']
+                : response['pagination']?['cursor'])
+            as String?;
+    if (next != null && next.isNotEmpty) _listingTokens[page + 1] = next;
+    final result = LiveCategoryResult(
+      hasMore: next != null && next.isNotEmpty,
+      items: items,
+    );
+    _listingPages[page] = result;
+    _listingAt ??= DateTime.now();
+    return result;
+  }
+
+  Future<GlobalChatBatch> readYoutubeChat(
+    LiveRoomDetail detail, {
+    String? pageToken,
+  }) async {
+    _requireApi();
+    final chatId = detail.data?['liveChatId'] as String?;
+    if (id != 'youtube' || chatId == null || chatId.isEmpty) {
+      throw const GlobalLiveException('该直播当前没有可读取的聊天，可能尚未开播、已关闭或已结束');
+    }
+    final response = await _get('liveChat/messages', {
+      'liveChatId': chatId,
+      'part': 'id,snippet,authorDetails',
+      'maxResults': 200,
+      if (pageToken != null) 'pageToken': pageToken,
+    });
+    return GlobalChatBatch.fromYoutube(response);
   }
 
   @override
