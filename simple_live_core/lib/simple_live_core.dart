@@ -44,3 +44,5 @@ export 'src/model/sync_progress.dart';
 
 export 'src/common/global_live_link.dart';
 export 'src/global_live_site.dart';
+
+export 'src/global_live_chat.dart';

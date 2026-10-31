@@ -1,5 +1,5 @@
 import 'package:simple_live_core/simple_live_core.dart';
-import 'package:simple_live_app/modules/global_live/global_live_page.dart';
+import 'package:simple_live_app/modules/global_live/global_live_home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:simple_live_app/app/app_style.dart';
@@ -43,7 +43,7 @@ class CategoryPage extends GetView<CategoryController> {
         children: Sites.supportSites
             .map(
               (e) => e.liveSite is GlobalLiveSite
-                  ? GlobalLivePage(site: e)
+                  ? GlobalLiveHomeView(site: e)
                   : CategoryListView(e.id),
             )
             .toList(),

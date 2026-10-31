@@ -15,6 +15,8 @@ enum LiveMessageType {
 }
 
 class LiveMessage {
+  final String? id;
+
   /// 消息类型
   final LiveMessageType type;
 
@@ -44,6 +46,7 @@ class LiveMessage {
   final List<LiveMessageSpan>? spans;
 
   LiveMessage({
+    this.id,
     required this.type,
     required this.userName,
     required this.message,
@@ -57,6 +60,7 @@ class LiveMessage {
   @override
   String toString() {
     return json.encode({
+      if (id != null) "id": id,
       "type": type.index,
       "userName": userName,
       "message": message,
@@ -117,6 +121,8 @@ class LiveMessageColor {
 }
 
 class LiveSuperChatMessage {
+  /// Exact platform amount including currency (or Bits), without conversion.
+  final String? priceDisplay;
   final String? id;
   final String userName;
   final String face;
@@ -127,6 +133,7 @@ class LiveSuperChatMessage {
   final String backgroundColor;
   final String backgroundBottomColor;
   LiveSuperChatMessage({
+    this.priceDisplay,
     this.id,
     required this.backgroundBottomColor,
     required this.backgroundColor,
@@ -146,6 +153,7 @@ class LiveSuperChatMessage {
       "face": face,
       "message": message,
       "price": price,
+      if (priceDisplay != null) "priceDisplay": priceDisplay,
       "startTime": startTime,
       "endTime": endTime,
       "backgroundColor": backgroundColor,

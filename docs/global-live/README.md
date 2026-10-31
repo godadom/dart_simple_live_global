@@ -2,7 +2,7 @@
 
 ## 使用
 
-主 App 首页或分类页选择 YouTube Live / Twitch，输入链接或频道标识；也可使用“链接解析”或直播搜索（精确输入，不是主播关键词搜索）。TV 在“热门直播”或分类平台列表中选择对应平台。
+主 App 首页或分类页选择 YouTube Live / Twitch，可浏览官方公开的正在直播列表（需配置 API），复用其他平台的直播卡片、刷新和分页；也可点“打开频道”输入链接或频道标识，或使用“链接解析”及精确直播搜索。公开直播发现不读取账号个性化推荐，也不复制完整官方首页。TV 在“热门直播”或分类平台列表中选择对应平台。
 
 - YouTube：`youtube.com/watch?v=<11位ID>`、`youtu.be/<ID>`、`youtube.com/live/<ID>`、`youtube.com/channel/<UC…>`、`youtube.com/@Handle`；频道链接可带 `/live`。平台输入框还接受视频 ID、频道 ID、`@Handle`。
 - Twitch：`twitch.tv/<channel>`、`www.twitch.tv/<channel>`、`m.twitch.tv/<channel>` 或频道名称，统一小写。拒绝目录、视频、设置等非频道路径。
@@ -18,7 +18,7 @@
 | 主 App Windows / 其他系统 | 外部浏览器 | 外部浏览器 |
 | TV App | 外部浏览器，设备须安装支持官方直播的浏览器 | 同左 |
 
-不提取 HLS/DASH、不把网页地址交给 media_kit，不抓取 HTML，不绕过登录、年龄、地区、版权或嵌入限制。播放器原生错误提示保留；YouTube 101/150 通常表示禁止嵌入，153 表示客户端标识问题。遇到受限播放可点击“在浏览器中打开”。内嵌不提供账号页；离开应用后台会关闭内嵌播放器。没有聊天、付费、写操作、推荐流、录播下载、多开播放或原生播放器自动换台支持。
+不提取 HLS/DASH、不把网页地址交给 media_kit，不抓取 HTML，不绕过登录、年龄、地区、版权或嵌入限制。播放器原生错误提示保留；YouTube 101/150 通常表示禁止嵌入，153 表示客户端标识问题。遇到受限播放可点击“在浏览器中打开”。内嵌不提供账号页；离开应用后台会关闭内嵌播放器。主 App 支持下文所述只读聊天与 SC 展示；没有发送聊天、购买、账号操作、录播下载、多开播放或原生播放器自动换台支持。
 
 Twitch 内嵌必须部署本目录的 `twitch-player.html` 到自己控制的真实 HTTPS 站点，并把完整页面地址填入可选配置。页面从 `location.hostname` 设置 `parent`，App 只传频道名称，不传任何 API 凭据。不要用虚构域名、HTTP、本地文件或借用第三方域名。页面应直接作为顶层页面加载；若另行嵌套，需要按 Twitch 文档配置全部 parent 域名。宽高至少 400×300；较窄屏幕可能需要横屏。此仓库没有代用户部署或声明任何可用托管域名。
 
@@ -31,9 +31,22 @@ Twitch 内嵌必须部署本目录的 `twitch-player.html` 到自己控制的真
 - 没有配置时刷新关注保持“未确认”，不会伪装离线。有配置时沿用关注刷新机制；失败也重置为未确认，详情页显示可读原因。
 - 成功结果缓存：视频和 Twitch 2 分钟，YouTube 频道 15 分钟（频道解析耗用搜索额度）。401 提示凭据过期；403/429 提示配额、限流或拒绝访问并冷却 5 分钟；连接 10 秒、响应 15 秒超时；不无限重试。缓存意味着状态存在延迟。
 - 频道无正在直播的视频显示未开播；指定视频可区分直播、预约、结束及普通视频。未知状态不能证明输入一定是直播，播放器可能显示已结束的原视频；配置 API 可在启动内嵌前识别并阻止普通视频／已结束直播。
-- 当前只提供精确频道／链接查询；主播搜索页会提示改用直播搜索。没有全站关键词搜索或只读聊天。
+- 搜索入口提供精确频道／链接查询；主播搜索页提示改用直播搜索。首页提供公开直播列表；不支持个性化推荐和全站关键词搜索。
 
 截至实现时，YouTube 文档将 search.list 列为独立的每日查询配额（默认 100 次），其他常用读取端点使用独立单位配额；以项目控制台为准。多频道持续自动刷新仍可能用完额度。Twitch 配额按官方响应头与应用限制执行；当前实现采用保守冷却，尚未批量查询或自动管理令牌。生产分发前宜实现受控的元数据服务，避免让所有用户自行配置和暴露服务凭据。
+
+## 主 App 界面与只读交流区
+
+- 首页复用 `HomeListView` / `LiveRoomCard` 的两列／自适应列表。YouTube 用 `search.list` 的 `eventType=live` 和观看量排序，Twitch 用 Helix `streams`。按官方游标分页，页面缓存 5 分钟，每次最多缓存 20 页；没有配置时显示配置入口和真实错误，不显示样例直播。
+- 房间采用现有主题及播放器、主播信息、聊天／SC（Twitch 为 Cheers）／关注／设置页签，提供底部关注、标签、刷新、分享。横屏或桌面显示右侧交流区。清晰度、字幕、音量、全屏由官方播放器控制；为保留官方播放器完整性，不覆盖自制弹幕或交互控件。
+- 关注页签及底部标签操作读写原有 Hive 关注与分组，仍可通过原有同步和配置包导出。YouTube 视频和频道关注的区别保持不变。
+- YouTube 用 `videos.list.liveStreamingDetails.activeLiveChatId` 找到聊天，再使用只读 `liveChat/messages` 请求。遵守 `pollingIntervalMillis`，并设置至少 30 秒间隔以控制配额；一次请求 200 条。可读取文本、Super Chat 和 Super Sticker，按服务端金额显示原币种，不换算成人民币。接口未提供可靠置顶到期时间，因此 SC 展示不伪造倒计时。
+- Twitch 聊天需要另填令牌所属用户名和具有 `chat:read` 权限的 User Access Token。它不同于用于 Helix 的 App Access Token。应用没有 OAuth 登录／令牌申请流程；通过官方 TLS IRC WebSocket 仅接收消息，只有认证、订阅与 PONG 协议命令，不提供聊天发送接口。收到带 Bits 的 Cheers 时显示于 Cheers 页签，以 Bits 为单位，不将其标为美元或 YouTube Super Chat。
+- 按消息 ID 去重，响应删除／清空事件；本次房间连接最多保留 300 条聊天、100 条 SC／Cheers，不持久化消息。设置中支持字号、自动滚动、清空和重新连接。房间退出或进入后台会停止聊天接收；API 错误显示原因，不自动无限重试。
+- 尚未配置权限、聊天被关闭或平台拒绝读取时，交流区明确提示原因。没有凭据时仍可直接打开频道、保存本地关注和使用官方播放入口。贡献榜等平台未开放的数据不创建空壳页签。
+- TV 当前仍使用原有简化频道／外部浏览器页面，本次截图对应的完整房间布局适配主 App Android 和桌面（桌面播放仍走浏览器）。
+
+官方协议参考：[YouTube 只读聊天接口](https://developers.google.com/youtube/data/live/reference/rest/v3/liveChatMessages/list)、[YouTube 消息类型和 Super Chat 字段](https://developers.google.com/youtube/data/live/reference/rest/v3/liveChatMessages)、[Twitch IRC 和授权要求](https://dev.twitch.tv/docs/chat/irc/)。
 
 ## 官方依据和许可证
 
@@ -62,3 +75,7 @@ DSH 检查：云端不存在 codex-delegate-to-dsh Skill、dsh_delegate MCP 或 
 - `flutter build windows --debug --no-pub`：当前 Linux 主机不支持 Windows 构建，未生成 Windows 安装包。
 - 首次尝试全量核心测试发现 `douyin_game_artwork_test.dart` 的 4 个已有失败（期望旧 PNG 路径，实际为 WebP）；`simple_live_core_test.dart` 实际包含联网及长期聊天连接，已中止并将其排除在离线回归之外。未修改这两个现有测试。
 - Flutter 3.41.9 工具与 Clang 在临时目录运行，未增加项目依赖或更新锁文件。无法用这些测试代替真实设备播放验证。
+
+### 界面整合补充验证
+
+新增 mock 测试验证公开列表游标和缓存、聊天解析与删除、原币种 SC、Bits、只读 IRC 协议和命令注入拒绝；界面测试验证原有直播卡片跳转、关注标签、SC 页签及 390×844／700×350 布局。预览截图采用明确标识的 fixture 数据和空播放器，不作为真实观看、聊天鉴权或付费事件的在线验证。

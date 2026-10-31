@@ -9,6 +9,7 @@ import 'package:simple_live_core/simple_live_core.dart';
 class SuperChatCard extends StatefulWidget {
   final LiveSuperChatMessage message;
   final String? remark;
+  final bool showCountdown;
   final Function()? onExpire;
   final int? customCountdown;
   final VoidCallback? onUserTap;
@@ -17,6 +18,7 @@ class SuperChatCard extends StatefulWidget {
   const SuperChatCard(
     this.message, {
     this.remark,
+    this.showCountdown = true,
     required this.onExpire,
     this.customCountdown,
     this.onUserTap,
@@ -50,7 +52,9 @@ class _SuperChatCardState extends State<SuperChatCard> {
   void _restartCountdown() {
     timer?.cancel();
     countdown = _resolveCountdown();
-    if (widget.customCountdown != null || countdown <= 0) {
+    if (!widget.showCountdown ||
+        widget.customCountdown != null ||
+        countdown <= 0) {
       return;
     }
     timer = Timer.periodic(const Duration(seconds: 1), timerCallback);
@@ -60,7 +64,8 @@ class _SuperChatCardState extends State<SuperChatCard> {
   void didUpdateWidget(covariant SuperChatCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.message != widget.message ||
-        oldWidget.customCountdown != widget.customCountdown) {
+        oldWidget.customCountdown != widget.customCountdown ||
+        oldWidget.showCountdown != widget.showCountdown) {
       _restartCountdown();
     }
   }
@@ -133,7 +138,8 @@ class _SuperChatCardState extends State<SuperChatCard> {
                           ),
                         ),
                         Text(
-                          "￥${widget.message.price}",
+                          widget.message.priceDisplay ??
+                              "￥${widget.message.price}",
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
@@ -142,13 +148,14 @@ class _SuperChatCardState extends State<SuperChatCard> {
                       ],
                     ),
                   ),
-                  Text(
-                    "$displayCountdown",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
+                  if (widget.showCountdown)
+                    Text(
+                      "$displayCountdown",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
