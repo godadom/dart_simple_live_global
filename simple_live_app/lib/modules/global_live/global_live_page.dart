@@ -49,6 +49,17 @@ class _GlobalLivePageState extends State<GlobalLivePage>
 
   GlobalLiveSite get site => widget.site.liveSite as GlobalLiveSite;
   String get keyId => '${site.id}_${_target!.roomId}';
+  String get _followRoomId {
+    final channelId = _detail?.data?['channelId'] as String?;
+    if (site.id == 'youtube' && channelId != null) {
+      final channel = GlobalLiveLink.parse(channelId, siteId: 'youtube');
+      if (channel != null) return channel.roomId;
+    }
+    return _target!.roomId;
+  }
+
+  String get _followKey => '${site.id}_$_followRoomId';
+
   @override
   void initState() {
     super.initState();
@@ -143,13 +154,13 @@ class _GlobalLivePageState extends State<GlobalLivePage>
   Future<void> _follow() async {
     try {
       final db = DBService.instance;
-      if (db.getFollowExist(keyId)) {
-        await db.deleteFollow(keyId);
+      if (db.getFollowExist(_followKey)) {
+        await db.deleteFollow(_followKey);
       } else {
         await db.addFollow(
           FollowUser(
-            id: keyId,
-            roomId: _target!.roomId,
+            id: _followKey,
+            roomId: _followRoomId,
             siteId: site.id,
             userName: _detail?.userName ?? _target!.roomId,
             face: _detail?.userAvatar ?? '',
@@ -372,7 +383,7 @@ class _GlobalLivePageState extends State<GlobalLivePage>
   Future<void> _tags() async {
     if (_target == null) return;
     final db = DBService.instance;
-    final roomKey = keyId;
+    final roomKey = _followKey;
     if (!db.getFollowExist(roomKey)) await _follow();
     final follow = db.followBox.get(roomKey);
     if (follow == null || !mounted) return;
@@ -528,8 +539,9 @@ class _GlobalLivePageState extends State<GlobalLivePage>
 
   Widget _followPanel() {
     final followed =
-        _target != null && DBService.instance.getFollowExist(keyId);
-    final tag = followed ? DBService.instance.followBox.get(keyId)?.tag : null;
+        _target != null && DBService.instance.getFollowExist(_followKey);
+    final tag =
+        followed ? DBService.instance.followBox.get(_followKey)?.tag : null;
     return ListView(padding: const EdgeInsets.all(16), children: [
       Text(followed
           ? '已保存到本地关注${tag == null ? "" : " · $tag"}'
@@ -542,7 +554,7 @@ class _GlobalLivePageState extends State<GlobalLivePage>
           icon: const Icon(Icons.sell_outlined),
           label: const Text('设置标签')),
       if (site.id == 'youtube')
-        const Text('视频链接只保存这一场直播。持续关注请保存频道 ID 或 Handle。'),
+        const Text('已识别所属频道时会保存频道关注；没有 API 时，视频链接只能保存这一场直播。'),
       if (site.id == 'youtube' &&
           _target?.isVideo == true &&
           _detail?.data?['channelId'] != null)
@@ -623,9 +635,10 @@ class _GlobalLivePageState extends State<GlobalLivePage>
                     children: [
                       TextButton.icon(
                           onPressed: _follow,
-                          icon: Icon(DBService.instance.getFollowExist(keyId)
-                              ? Icons.favorite
-                              : Icons.favorite_border),
+                          icon: Icon(
+                              DBService.instance.getFollowExist(_followKey)
+                                  ? Icons.favorite
+                                  : Icons.favorite_border),
                           label: const Text('关注')),
                       TextButton.icon(
                           onPressed: _tags,

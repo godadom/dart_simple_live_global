@@ -50,7 +50,8 @@ class FixtureGlobalSite extends GlobalLiveSite {
           data: {
             'state': GlobalLiveState.live,
             'videoId': roomId,
-            'liveChatId': 'fixture-chat'
+            'liveChatId': 'fixture-chat',
+            'channelId': 'UCabcdefghijklmnopqrstuv'
           });
   @override
   Future<GlobalChatBatch> readYoutubeChat(LiveRoomDetail detail,
@@ -215,8 +216,10 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await tester.pumpAndSettle();
-    expect(db.followBox.get('youtube_abcdefgh_-1')!.tag, 'Group');
-    expect(db.getFollowTagList().single.userId, ['youtube_abcdefgh_-1']);
+    expect(db.followBox.get('youtube_channel/UCabcdefghijklmnopqrstuv')!.tag,
+        'Group');
+    expect(db.getFollowTagList().single.userId,
+        ['youtube_channel/UCabcdefghijklmnopqrstuv']);
     tester.view.physicalSize = const Size(700, 350);
     await tester.pumpAndSettle();
     expect(find.byType(SuperChatCard), findsOneWidget);

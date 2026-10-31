@@ -7,7 +7,7 @@
 - YouTube：`youtube.com/watch?v=<11位ID>`、`youtu.be/<ID>`、`youtube.com/live/<ID>`、`youtube.com/channel/<UC…>`、`youtube.com/@Handle`；频道链接可带 `/live`。平台输入框还接受视频 ID、频道 ID、`@Handle`。
 - Twitch：`twitch.tv/<channel>`、`www.twitch.tv/<channel>`、`m.twitch.tv/<channel>` 或频道名称，统一小写。拒绝目录、视频、设置等非频道路径。
 - “本地关注”复用 Hive 的原有关注记录；在原有关注页管理分组、取消关注、导入导出及同步。没有官方关注接口。新记录使用 `youtube` / `twitch` siteId，旧记录结构不变。旧版客户端不认识新 siteId，建议两端都升级后同步。
-- YouTube 视频 ID 只关注该场直播；持续关注频道应输入频道 ID / Handle，或在有 API 元数据时点“打开所属频道”。Handle 可被主播更改，稳定性优先时使用 UC 频道 ID。
+- 识别到 YouTube 视频所属频道时，房间关注操作自动保存频道，方便观看下一场直播；没有 API 元数据时，视频 ID 只能保存该场直播，此时持续关注应输入频道 ID / Handle。Handle 可被主播更改，稳定性优先时使用 UC 频道 ID。
 - 点击官方播放器或成功打开外部浏览器时记录访问历史；历史不代表视频已实际播放成功。
 
 ## 播放支持
@@ -65,7 +65,7 @@ Twitch 内嵌必须部署本目录的 `twitch-player.html` 到自己控制的真
 
 DSH 检查：云端不存在 codex-delegate-to-dsh Skill、dsh_delegate MCP 或 dsh CLI；未委派任务，全部由 Codex 实施与检查。
 
-### 本次执行结果
+### 基础接入验证记录
 
 - 核心：96 个离线测试通过（含新增 33 个测试）。已使用 Clang 构建原有 QuickJS hook 后运行标准 `dart test`。
 - 主 App：`flutter test --no-pub test/global_live_page_test.dart test/parse_controller_test.dart`，14 项通过。
@@ -79,3 +79,5 @@ DSH 检查：云端不存在 codex-delegate-to-dsh Skill、dsh_delegate MCP 或 
 ### 界面整合补充验证
 
 新增 mock 测试验证公开列表游标和缓存、聊天解析与删除、原币种 SC、Bits、只读 IRC 协议和命令注入拒绝；界面测试验证原有直播卡片跳转、关注标签、SC 页签及 390×844／700×350 布局。预览截图采用明确标识的 fixture 数据和空播放器，不作为真实观看、聊天鉴权或付费事件的在线验证。
+
+界面整合最终本地验证：核心离线测试 105 项、主 App 界面／解析测试 16 项通过；主 App 和 TV 全量静态检查均为 No issues found。
